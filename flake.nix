@@ -73,8 +73,8 @@
             #sh
             runHook preInstall
             mkdir -p $out/share/fonts/truetype $out/share/fonts/opentype
-            find -name *.otf -exec mv {} "$out/share/fonts/opentype/" \;
-            find -name *.ttf -exec mv {} "$out/share/fonts/truetype/" \;
+            find -name \*.otf -exec mv {} "$out/share/fonts/opentype/" \;
+            find -name \*.ttf -exec mv {} "$out/share/fonts/truetype/" \;
             runHook postInstall
           '';
           meta = with pkgs.lib; {
