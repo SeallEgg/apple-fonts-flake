@@ -100,9 +100,10 @@
           paths = nixpkgs.lib.attrValues fontPackages;
         };
       });
-
-    overlays.default = final: prev: {
-      apple-fonts = self.packages.${final.system};
-    };
+    overlays.default = final: prev:
+      self.packages.${final.system}
+      // {
+        apple-fonts = self.packages.${final.system}.default;
+      };
   };
 }
