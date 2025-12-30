@@ -1,5 +1,5 @@
 {
-  description = "Flake providing packages and an overlay for Apple fonts.";
+  description = "Flake providing package for Apple fonts.";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -45,16 +45,13 @@
       then
         pkgs.stdenvNoCC.mkDerivation {
           inherit name src;
-
           dontUnpack = true;
-
           installPhase = ''
             runHook preInstall
             mkdir -p $out/share/fonts/truetype
             cp "$src" $out/share/fonts/truetype/AppleColorEmoji.ttf
             runHook postInstall
           '';
-
           meta = with pkgs.lib; {
             description = "Apple Color Emoji font";
           };
@@ -62,9 +59,7 @@
       else
         pkgs.stdenvNoCC.mkDerivation {
           inherit name src;
-
           nativeBuildInputs = [pkgs.p7zip pkgs.undmg];
-
           unpackPhase = ''
             runHook preUnpack
             undmg $src
@@ -72,7 +67,6 @@
             7z x Payload~
             runHook postUnpack
           '';
-
           installPhase = ''
             runHook preInstall
             mkdir -p $out/share/fonts/truetype $out/share/fonts/opentype
@@ -80,30 +74,44 @@
             find -name \*.ttf -exec mv {} "$out/share/fonts/truetype/" \;
             runHook postInstall
           '';
-
           meta = with pkgs.lib; {
             description = "Apple ${name} font";
           };
         };
 
     fontInputs = nixpkgs.lib.filterAttrs (n: _: n != "nixpkgs") inputs;
-  in {
-    packages = forAllSystems (system: let
-      pkgs = nixpkgs.legacyPackages.${system};
+
+    makeFontPackageSet = pkgs: let
       fontPackages = nixpkgs.lib.mapAttrs (name: src: mkFontPackage pkgs name src) fontInputs;
     in
       fontPackages
       // {
-        # package with all fonts
-        default = pkgs.symlinkJoin {
+        apple-fonts = pkgs.symlinkJoin {
           name = "apple-fonts";
           paths = nixpkgs.lib.attrValues fontPackages;
         };
-      });
-    overlays.default = final: prev:
-      self.packages.${final.system}
-      // {
-        apple-fonts = self.packages.${final.system}.default;
       };
+  in {
+    packages = forAllSystems (
+      system:
+        makeFontPackageSet nixpkgs.legacyPackages.${system}
+    );
+
+    overlays.default = final: prev: makeFontPackageSet final;
+
+    nixosModules.default = {
+      config,
+      pkgs,
+      lib,
+      ...
+    }: {
+      options.fonts.apple-fonts = {
+        enable = lib.mkEnableOption "Apple fonts";
+      };
+
+      config = lib.mkIf config.fonts.apple-fonts.enable {
+        fonts.packages = [(makeFontPackageSet pkgs).apple-fonts];
+      };
+    };
   };
 }
