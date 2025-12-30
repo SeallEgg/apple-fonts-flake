@@ -25,8 +25,8 @@
     sf-hebrew.url = "https://devimages-cdn.apple.com/design/resources/download/SF-Hebrew.dmg";
     sf-hebrew.flake = false;
 
-    ny-serif.url = "https://devimages-cdn.apple.com/design/resources/download/NY.dmg";
-    ny-serif.flake = false;
+    ny.url = "https://devimages-cdn.apple.com/design/resources/download/NY.dmg";
+    ny.flake = false;
 
     apple-color-emoji.url = "https://github.com/samuelngs/apple-emoji-linux/releases/latest/download/AppleColorEmoji.ttf";
     apple-color-emoji.flake = false;
@@ -47,6 +47,7 @@
           inherit name src;
           dontUnpack = true;
           installPhase = ''
+            #sh
             runHook preInstall
             mkdir -p $out/share/fonts/truetype
             cp "$src" $out/share/fonts/truetype/AppleColorEmoji.ttf
@@ -61,6 +62,7 @@
           inherit name src;
           nativeBuildInputs = [pkgs.p7zip pkgs.undmg];
           unpackPhase = ''
+            #sh
             runHook preUnpack
             undmg $src
             7z x *.pkg
@@ -68,10 +70,11 @@
             runHook postUnpack
           '';
           installPhase = ''
+            #sh
             runHook preInstall
             mkdir -p $out/share/fonts/truetype $out/share/fonts/opentype
-            find -name \*.otf -exec mv {} "$out/share/fonts/opentype/" \;
-            find -name \*.ttf -exec mv {} "$out/share/fonts/truetype/" \;
+            find -name *.otf -exec mv {} "$out/share/fonts/opentype/" \;
+            find -name *.ttf -exec mv {} "$out/share/fonts/truetype/" \;
             runHook postInstall
           '';
           meta = with pkgs.lib; {
@@ -79,7 +82,7 @@
           };
         };
 
-    fontInputs = nixpkgs.lib.filterAttrs (n: _: n != "nixpkgs") inputs;
+    fontInputs = nixpkgs.lib.filterAttrs (n: _: n != "nixpkgs" && n != "self") inputs;
 
     makeFontPackageSet = pkgs: let
       fontPackages = nixpkgs.lib.mapAttrs (name: src: mkFontPackage pkgs name src) fontInputs;
